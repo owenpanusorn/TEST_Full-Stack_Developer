@@ -1,4 +1,4 @@
-const dummyKeywords = [
+const dummyTags = [
   "nature",
   "city",
   "animal",
@@ -7,4 +7,4 @@ const dummyKeywords = [
   "travel",
 ];
 
-module.exports = dummyKeywords;
+module.exports = dummyTags;
