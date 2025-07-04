@@ -1,30 +1,31 @@
 <template>
-   <v-app :theme="theme">
-      <v-app-bar class="px-3">
+  <v-app :theme="theme">
+    <v-app-bar class="px-3">
         <v-spacer></v-spacer>
-
         <v-btn
-          :prepend-icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          :prepend-icon="
+            theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'
+          "
           text="Toggle Theme"
           slim
           @click="onClick"
         ></v-btn>
-      </v-app-bar>
+    </v-app-bar>
 
-      <v-main>
-        <v-container>
-          <h1>Main Content</h1>
-        </v-container>
-      </v-main>
-    </v-app>
+    <v-main>
+      <v-container>
+        <galleryComponents/>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script setup>
-  import { ref } from 'vue'
+import { ref } from "vue";
+import galleryComponents from "./components/gallery.components.vue";
+const theme = ref("light");
 
-  const theme = ref('light')
-
-  function onClick () {
-    theme.value = theme.value === 'light' ? 'dark' : 'light'
-  }
+function onClick() {
+  theme.value = theme.value === "light" ? "dark" : "light";
+}
 </script>
