@@ -1,21 +1,55 @@
 <template>
-   <v-container>
-   <v-infinite-scroll @load="load">
-      <!-- Masonry Layout with CSS Columns -->
+  <v-container>
+    <v-row justify="center" class="mb-4">
+      <v-col cols="12" md="10" lg="8">
+        <div class="d-flex justify-center flex-wrap">
+          <v-chip
+            class="ma-2"
+            :variant="activeTag === null ? 'elevated' : 'tonal'"
+            color="primary"
+            @click="setFilterTag(null)"
+          >
+            All
+          </v-chip>
+
+          <v-chip
+            v-for="tag in tags"
+            :key="tag.id"
+            class="ma-2"
+            :variant="activeTag === tag.name ? 'elevated' : 'tonal'"
+            color="primary"
+            @click="setFilterTag(tag.name)"
+          >
+            #{{ tag.name }}
+          </v-chip>
+        </div>
+      </v-col>
+    </v-row>
+
+    <v-infinite-scroll @load="load" :key="infiniteScrollKey">
       <div class="masonry-container">
         <div v-for="(image, index) in images" :key="index" class="masonry-item">
           <v-img
             :src="image.image_url"
             :alt="image.tags.join(', ')"
-            :aspect-ratio="image.aspect_ratio || 1"
-            cover
             class="mb-3"
           ></v-img>
+          <div class="tags-container pa-2">
+            <v-chip
+              v-for="tag in image.tags"
+              :key="tag"
+              class="mr-1 mb-1"
+              size="small"
+              color="primary"
+            >
+              #{{ tag }}
+            </v-chip>
+          </div>
         </div>
       </div>
-      
+
       <template #empty>
-        <v-alert type="info" class="mt-4">No more images.</v-alert>
+        <v-alert class="mt-4">No more images.</v-alert>
       </template>
     </v-infinite-scroll>
   </v-container>
@@ -29,57 +63,23 @@ export default {
 
 <script setup>
 import axios from "axios";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 const images = ref([]);
 const page = ref(1);
 const activeTag = ref(null);
+const tags = ref([]);
+const infiniteScrollKey = ref(0);
 
-const imageLayout = computed(() => {
-  const layout = [];
-  let i = 0;
-  
-  while (i < images.value.length) {
-    // รูปแบบที่ 1: รูปใหญ่ 1 รูป (cols: 6) และ รูปเล็ก 2 รูป (cols: 6)
-    if (i + 2 < images.value.length) {
-      layout.push({
-        image: images.value[i],
-        cols: 6,
-      });
-      layout.push({
-        cols: 6,
-        children: [
-          { image: images.value[i + 1], cols: 12 },
-          { image: images.value[i + 2], cols: 12 },
-        ],
-      });
-      i += 3;
-    }
-    // รูปแบบที่ 2: รูปเหลือน้อยกว่า 3 รูป
-    else if (i + 1 < images.value.length) {
-      // 2 รูปสุดท้าย - แบ่งครึ่งหน้าจอ
-      layout.push({
-        image: images.value[i],
-        cols: 6,
-      });
-      layout.push({
-        image: images.value[i + 1],
-        cols: 6,
-      });
-      i += 2;
-    }
-    // รูปแบบที่ 3: รูปสุดท้าย 1 รูป - เต็มความกว้าง
-    else {
-      layout.push({
-        image: images.value[i],
-        cols: 12,
-      });
-      i += 1;
-    }
+const fetchTags = async () => {
+  try {
+    const res = await axios.get("http://localhost:3000/api/tags");
+    tags.value = res.data;
+  } catch (err) {
+    console.log(`fetch API Tags error: ` + err);
+    done("error");
   }
-  
-  return layout;
-});
+};
 
 async function load({ done }) {
   try {
@@ -113,28 +113,36 @@ async function load({ done }) {
 watch(activeTag, () => {
   images.value = [];
   page.value = 1;
+  infiniteScrollKey.value++;
 });
 
 const setFilterTag = (tagName) => {
   activeTag.value = tagName;
 };
+
+onMounted(() => {
+  fetchTags();
+});
 </script>
 
 <style scoped>
 .masonry-container {
   column-count: 3;
-  column-gap: 16px;
-  column-fill: balance;
+  column-gap: 1rem;
 }
 
 .masonry-item {
   break-inside: avoid;
-  display: inline-block;
-  width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-/* Responsive columns */
+.tags-container {
+  background-color: #f9f9f9;
+}
+
 @media (max-width: 960px) {
   .masonry-container {
     column-count: 2;

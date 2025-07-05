@@ -1,6 +1,16 @@
 const dummyTags = require("../db/dummyTags");
 const knex = require("../db/config");
 
+exports.fetchTags = async (req,res) => {
+  try {
+    const itemTags = await knex('tbl_tags').select("*")
+    return res.status(200).json(itemTags)
+  } catch (err) {
+    console.log(`fetch Tags error: ${JSON.stringify(err)}`);
+    return res.status(500).json({ message: err.message });
+  }
+}
+
 exports.fetchGallery = async (req, res) => {
   try {
     const { page = 1, limit = 10, tag } = req.query;

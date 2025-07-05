@@ -1,15 +1,9 @@
 <template>
   <v-app :theme="theme">
     <v-app-bar class="px-3">
-        <v-spacer></v-spacer>
-        <v-btn
-          :prepend-icon="
-            theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'
-          "
-          text="Toggle Theme"
-          slim
-          @click="onClick"
-        ></v-btn>
+      <v-container>
+      <img src="./assets/diversition.png" alt="" width="150">
+      </v-container>
     </v-app-bar>
 
     <v-main>
@@ -21,9 +15,4 @@
 <script setup>
 import { ref } from "vue";
 import galleryComponents from "./components/gallery.components.vue";
-const theme = ref("light");
-
-function onClick() {
-  theme.value = theme.value === "light" ? "dark" : "light";
-}
 </script>
