@@ -13,9 +13,7 @@
     </v-app-bar>
 
     <v-main>
-      <v-container>
         <galleryComponents/>
-      </v-container>
     </v-main>
   </v-app>
 </template>

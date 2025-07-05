@@ -1,11 +1,72 @@
 const dummyTags = require("../db/dummyTags");
 const knex = require("../db/config");
 
-const url = "https://placehold.co/";
-const size = [400, 500, 600, 800];
-const imageCount = 30;
+exports.fetchGallery = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, tag } = req.query;
+    const offset = (page - 1) * limit;
+    let query = knex("tbl_images").select("id");
+
+    if (tag) {
+      query = query.whereExists(function () {
+        this.select("*")
+          .from("tbl_image_tags")
+          .join("tbl_tags", "tbl_image_tags.tag_id", "tbl_tags.id")
+          .where("tbl_tags.name", tag)
+          .whereRaw("tbl_image_tags.image_id = tbl_images.id");
+      });
+    }
+
+    const imagesIdObjects = await query
+      .orderBy("created_at", "desc")
+      .limit(limit)
+      .offset(offset);
+
+    if (imagesIdObjects.length === 0) {
+      return res.json({ gallery: [] });
+    }
+
+    const imageIds = imagesIdObjects.map((img) => img.id);
+
+    const imagePromise = await knex("tbl_images").whereIn("id", imageIds);
+
+    const tagsPromise = await knex("tbl_image_tags")
+      .join("tbl_tags", "tbl_image_tags.tag_id", "tbl_tags.id")
+      .whereIn("tbl_image_tags.image_id", imageIds)
+      .select("tbl_image_tags.image_id", "tbl_tags.name as tagName");
+
+    const [images, tags] = await Promise.all([imagePromise, tagsPromise]);
+
+    const sortedImages = imageIds.map((id) =>
+      images.find((img) => img.id === id)
+    );
+
+    const tagMap = new Map();
+    
+    tags.forEach((t) => {
+      if (!tagMap.has(t.image_id)) {
+        tagMap.set(t.image_id, []);
+      }
+      tagMap.get(t.image_id).push(t.tagName);
+    });
+
+    const finalResult = sortedImages.map((image) => ({
+      ...image,
+      tags: tagMap.get(image.id) || [],
+    }));
+
+    return res.status(200).json({ gallery: finalResult });
+  } catch (err) {
+    console.log(`fetch Gallery error: ${JSON.stringify(err)}`);
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 exports.generateMatchImageAndKeywords = async (req, res) => {
+  const url = "https://placehold.co/";
+  const size = [400, 500, 600, 800];
+  const imageCount = 30;
+
   try {
     const allImages = await knex.select("id").from("tbl_images");
     const allTags = await knex.select("id").from("tbl_tags");
@@ -29,13 +90,13 @@ exports.generateMatchImageAndKeywords = async (req, res) => {
         tag_id: tagId,
       }));
 
-      await knex("tbl_image_tags").insert(imageTageRelations)
+      await knex("tbl_image_tags").insert(imageTageRelations);
     }
 
     return res.status(201).json({
       success: true,
-      message: "generate image tags successfully!"
-    })
+      message: "generate image tags successfully!",
+    });
   } catch (err) {
     console.log(`genarate Images error: ${JSON.stringify(err)}`);
     return res.status(500).json({ message: err.message });
